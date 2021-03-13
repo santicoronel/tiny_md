@@ -1,7 +1,10 @@
-#include <GL/glut.h>    // OpenGL
-
 #include "parameters.h"
 #include "core.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <GL/glut.h>    // OpenGL
 
 // variables globales
 static double Ekin, Epot, Temp, Pres;       // variables macroscopicas

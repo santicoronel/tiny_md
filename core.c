@@ -1,6 +1,9 @@
 #include "parameters.h"
 #include "core.h"
 
+#include <math.h>
+#include <stdlib.h> // rand()
+
 void init_pos(double *rxyz, const double rho){
     // inicialización de las posiciones de los átomos en un cristal FCC
 

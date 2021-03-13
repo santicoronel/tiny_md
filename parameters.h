@@ -8,11 +8,9 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
-#include <stdio.h>  // printf(), fprintf()
 #include <math.h>   // sqrt(), cbrt(), pow(), M_PI
-#include <stdlib.h> // rand()
 #include <time.h>   // time(NULL)
-#include <omp.h>    // omp_get_wtime()
+
 
 #ifndef N // número de particulas (debe ser un 4m^3 para el cristal inicial)
 #define N 256

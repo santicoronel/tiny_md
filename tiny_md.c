@@ -1,6 +1,11 @@
 #include "parameters.h"
 #include "core.h"
 
+#include <math.h>
+#include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 int main(){
     FILE *file_xyz, *file_thermo;
