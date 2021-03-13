@@ -1,7 +1,7 @@
 CC       = gcc
 CFLAGS	 = -O0
 WFLAGS	 = -std=gnu99 -Wall -Wextra -g
-LDFLAGS	 = -lm -lgomp
+LDFLAGS	 = -lm
 
 TARGETS		= tiny_md viz
 SOURCES		= $(shell echo *.c)

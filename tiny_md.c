@@ -1,8 +1,8 @@
 #include "parameters.h"
 #include "core.h"
+#include "wtime.h"
 
 #include <math.h>
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,7 +11,6 @@ int main(){
     FILE *file_xyz, *file_thermo;
     file_xyz = fopen("trajectory.xyz", "w");
     file_thermo = fopen("thermo.log", "w");
-    double start = 0.0, elapsed = 0.0;
     double Ekin, Epot, Temp, Pres;       // variables macroscopicas
     double Rho, cell_V, cell_L, tail, Etail, Ptail;
     double *rxyz, *vxyz, *fxyz;          // variables microscopicas
@@ -33,7 +32,7 @@ int main(){
     double Rhob;
     Rho = Rhoi;
     init_pos(rxyz, Rho);
-    start = omp_get_wtime();
+    double start = wtime();
     for (int m = 0; m < 9; m++){
         Rhob   = Rho;
         Rho    = Rhoi - 0.1*(double)m;
@@ -94,7 +93,7 @@ int main(){
         printf("%f\t%f\t%f\t%f\n", Rho, cell_V, epotm/(double)mes, presm/(double)mes);
     }
 
-    elapsed = omp_get_wtime() - start;
+    double elapsed = wtime() - start;
     printf("# Tiempo total de simulación = %f segundos\n", elapsed);
     printf("# Tiempo simulado = %f [fs]\n", t*1.6);
     printf("# ns/day = %f\n", (1.6e-6*t)/elapsed*86400);
