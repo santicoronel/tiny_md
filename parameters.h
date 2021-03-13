@@ -15,7 +15,7 @@
 #include <omp.h>    // omp_get_wtime()
 
 #ifndef N // número de particulas (debe ser un 4m^3 para el cristal inicial)
-#define N 864
+#define N 256
 #endif
 
 #ifndef SEED // rand SEED para las velocidades
