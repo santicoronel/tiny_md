@@ -21,7 +21,7 @@ donde `make clean` elimina los objetos compilados anteriormente y `make` compila
 
 > Nota:
 >
-> _Si se desean cambiar parámetros de entrada de la simulación, puede modificarse el archivo _`in.parameters`_ y recompilar o pasar los valores deseados como argumento a _`make`_; por ejemplo, _`make N=1372`_ cambia la cantidad de partículas que se simulan._
+> _Si se desean cambiar parámetros de entrada de la simulación, puede modificarse el archivo _`parameters.h`_ o pasar los valores deseados como parámetros al preprocesador C; por ejemplo, _`make CPPFLAGS="-DN=1372"`_ cambia la cantidad de partículas que se simulan._
 
 
 ### Contacto

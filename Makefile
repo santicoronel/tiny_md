@@ -1,11 +1,11 @@
-CC       = gcc
-CFLAGS	 = -O0
-WFLAGS	 = -std=gnu99 -Wall -Wextra -g
-LDFLAGS	 = -lm
+CC      = gcc
+CFLAGS	= -O0
+WFLAGS	= -std=gnu99 -Wall -Wextra -g
+LDFLAGS	= -lm
 
-TARGETS		= tiny_md viz
-SOURCES		= $(shell echo *.c)
-OBJECTS     = core.o
+TARGETS	= tiny_md viz
+SOURCES	= $(shell echo *.c)
+OBJECTS = core.o
 
 all: $(TARGETS)
 
@@ -16,7 +16,7 @@ tiny_md: tiny_md.o $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(WFLAGS) $(CFLAGS) -c $<
+	$(CC) $(WFLAGS) $(CPPFLAGS) $(CFLAGS) -c $<
 
 clean:
 	rm -f $(TARGETS) *.o *.xyz *.log .depend
