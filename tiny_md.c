@@ -22,24 +22,24 @@ int main()
 
     printf("# Número de partículas:      %d\n", N);
     printf("# Temperatura de referencia: %.2f\n", T0);
-    printf("# Pasos de equilibración:    %d\n", teq);
-    printf("# Pasos de medición:         %d\n", trun - teq);
-    printf("# (mediciones cada %d pasos)\n", tmes);
+    printf("# Pasos de equilibración:    %d\n", TEQ);
+    printf("# Pasos de medición:         %d\n", TRUN - TEQ);
+    printf("# (mediciones cada %d pasos)\n", TMES);
     printf("# densidad, volumen, energía potencial media, presión media\n");
     fprintf(file_thermo, "# t Temp Pres Epot Etot\n");
 
     srand(SEED);
     double t = 0.0, sf;
     double Rhob;
-    Rho = Rhoi;
+    Rho = RHOI;
     init_pos(rxyz, Rho);
     double start = wtime();
     for (int m = 0; m < 9; m++) {
         Rhob = Rho;
-        Rho = Rhoi - 0.1 * (double)m;
+        Rho = RHOI - 0.1 * (double)m;
         cell_V = (double)N / Rho;
         cell_L = cbrt(cell_V);
-        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(rcut, -9) - pow(rcut, -3)) / 3.0;
+        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(RCUT, -9) - pow(RCUT, -3)) / 3.0;
         Etail = tail * (double)N;
         Ptail = tail * Rho;
 
@@ -51,7 +51,7 @@ int main()
         init_vel(vxyz, &Temp, &Ekin);
         forces(rxyz, fxyz, &Epot, &Pres, &Temp, Rho, cell_V, cell_L);
 
-        for (i = 1; i < teq; i++) { // loop de equilibracion
+        for (i = 1; i < TEQ; i++) { // loop de equilibracion
 
             velocity_verlet(rxyz, vxyz, fxyz, &Epot, &Ekin, &Pres, &Temp, Rho, cell_V, cell_L);
 
@@ -63,7 +63,7 @@ int main()
 
         int mes = 0;
         double epotm = 0.0, presm = 0.0;
-        for (i = teq; i < trun; i++) { // loop de medicion
+        for (i = TEQ; i < TRUN; i++) { // loop de medicion
 
             velocity_verlet(rxyz, vxyz, fxyz, &Epot, &Ekin, &Pres, &Temp, Rho, cell_V, cell_L);
 
@@ -72,7 +72,7 @@ int main()
                 vxyz[k] *= sf;
             }
 
-            if (i % tmes == 0) {
+            if (i % TMES == 0) {
                 Epot += Etail;
                 Pres += Ptail;
 
@@ -87,7 +87,7 @@ int main()
                 }
             }
 
-            t += dt;
+            t += DT;
         }
         printf("%f\t%f\t%f\t%f\n", Rho, cell_V, epotm / (double)mes, presm / (double)mes);
     }

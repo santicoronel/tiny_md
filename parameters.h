@@ -24,30 +24,30 @@
 #define T0 2.0
 #endif
 
-#ifndef Rhoi // densidad inicial
-#define Rhoi 1.2
+#ifndef RHOI // densidad inicial
+#define RHOI 1.2
 #endif
 
-#ifndef rcut // radio de corte
-#define rcut 2.5
+#ifndef RCUT // radio de corte
+#define RCUT 2.5
 #endif
 
-#ifndef dt // paso temporal ~ 1.6 fs para el Ar
-#define dt 0.005
+#ifndef DT // paso temporal ~ 1.6 fs para el Ar
+#define DT 0.005
 #endif
 
-#ifndef teq // pasos de equilibracion
-#define teq 500
+#ifndef TEQ // pasos de equilibracion
+#define TEQ 500
 #endif
 
-#ifndef trun // trun - teq: pasos de medicion
-#define trun 2000
+#ifndef TRUN // TRUN - TEQ: pasos de medicion
+#define TRUN 2000
 #endif
 
-#ifndef tmes // cada cuantos pasos se mide
-#define tmes 10
+#ifndef TMES // cada cuantos pasos se mide
+#define TMES 10
 #endif
 
-#define ecut (4.0 * (pow(rcut, -12) - pow(rcut, -6)))
+#define ECUT (4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
 #endif

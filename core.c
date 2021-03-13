@@ -94,7 +94,7 @@ void forces(const double* rxyz, double* fxyz, double* epot, double* pres,
         fxyz[i] = 0.0;
     }
     double pres_vir = 0.0;
-    double rcut2 = rcut * rcut;
+    double rcut2 = RCUT * RCUT;
     *epot = 0.0;
 
     for (int i = 0; i < 3 * (N - 1); i += 3) {
@@ -133,7 +133,7 @@ void forces(const double* rxyz, double* fxyz, double* epot, double* pres,
                 fxyz[j + 1] -= fr * ry;
                 fxyz[j + 2] -= fr * rz;
 
-                *epot += 4.0 * r6inv * (r6inv - 1.0) - ecut;
+                *epot += 4.0 * r6inv * (r6inv - 1.0) - ECUT;
                 pres_vir += fr * rij2;
             }
         }
@@ -161,26 +161,26 @@ void velocity_verlet(double* rxyz, double* vxyz, double* fxyz, double* epot,
 {
 
     for (int i = 0; i < 3 * N; i += 3) { // actualizo posiciones
-        rxyz[i + 0] += vxyz[i + 0] * dt + 0.5 * fxyz[i + 0] * dt * dt;
-        rxyz[i + 1] += vxyz[i + 1] * dt + 0.5 * fxyz[i + 1] * dt * dt;
-        rxyz[i + 2] += vxyz[i + 2] * dt + 0.5 * fxyz[i + 2] * dt * dt;
+        rxyz[i + 0] += vxyz[i + 0] * DT + 0.5 * fxyz[i + 0] * DT * DT;
+        rxyz[i + 1] += vxyz[i + 1] * DT + 0.5 * fxyz[i + 1] * DT * DT;
+        rxyz[i + 2] += vxyz[i + 2] * DT + 0.5 * fxyz[i + 2] * DT * DT;
 
         rxyz[i + 0] = pbc(rxyz[i + 0], L);
         rxyz[i + 1] = pbc(rxyz[i + 1], L);
         rxyz[i + 2] = pbc(rxyz[i + 2], L);
 
-        vxyz[i + 0] += 0.5 * fxyz[i + 0] * dt;
-        vxyz[i + 1] += 0.5 * fxyz[i + 1] * dt;
-        vxyz[i + 2] += 0.5 * fxyz[i + 2] * dt;
+        vxyz[i + 0] += 0.5 * fxyz[i + 0] * DT;
+        vxyz[i + 1] += 0.5 * fxyz[i + 1] * DT;
+        vxyz[i + 2] += 0.5 * fxyz[i + 2] * DT;
     }
 
     forces(rxyz, fxyz, epot, pres, temp, rho, V, L); // actualizo fuerzas
 
     double sumv2 = 0.0;
     for (int i = 0; i < 3 * N; i += 3) { // actualizo velocidades
-        vxyz[i + 0] += 0.5 * fxyz[i + 0] * dt;
-        vxyz[i + 1] += 0.5 * fxyz[i + 1] * dt;
-        vxyz[i + 2] += 0.5 * fxyz[i + 2] * dt;
+        vxyz[i + 0] += 0.5 * fxyz[i + 0] * DT;
+        vxyz[i + 1] += 0.5 * fxyz[i + 1] * DT;
+        vxyz[i + 2] += 0.5 * fxyz[i + 2] * DT;
 
         sumv2 += vxyz[i + 0] * vxyz[i + 0] + vxyz[i + 1] * vxyz[i + 1]
             + vxyz[i + 2] * vxyz[i + 2];

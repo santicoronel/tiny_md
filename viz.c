@@ -43,7 +43,7 @@ static void post_display(void)
 
 static void draw_atoms(void)
 {
-    double glL = cbrt((double)N / (Rhoi - 0.8));
+    double glL = cbrt((double)N / (RHOI - 0.8));
 
     double resize = 0.5;
 
@@ -130,10 +130,10 @@ static void idle_func(void)
 
     if (switcher == 3) {
 
-        Rho = Rhoi;
+        Rho = RHOI;
         V = (double)N / Rho;
         box_size = cbrt(V);
-        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(rcut, -9) - pow(rcut, -3)) / 3.0;
+        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(RCUT, -9) - pow(RCUT, -3)) / 3.0;
         Etail = tail * (double)N;
         Ptail = tail * Rho;
 
@@ -154,7 +154,7 @@ static void idle_func(void)
 
         V = (double)N / Rho;
         box_size = cbrt(V);
-        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(rcut, -9) - pow(rcut, -3)) / 3.0;
+        tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(RCUT, -9) - pow(RCUT, -3)) / 3.0;
         Etail = tail * (double)N;
         Ptail = tail * Rho;
 
@@ -166,14 +166,14 @@ static void idle_func(void)
         forces(rxyz, fxyz, &Epot, &Pres, &Temp, Rho, V, box_size);
 
         switcher = 0;
-        if (fabs(Rho - (Rhoi - 0.9f)) < 1e-6) {
+        if (fabs(Rho - (RHOI - 0.9f)) < 1e-6) {
             printf("\n");
             switcher = 3;
         }
 
     } else if (switcher == 1) { // loop de medición
 
-        for (int i = frames; i < frames + tmes; i++) {
+        for (int i = frames; i < frames + TMES; i++) {
 
             velocity_verlet(rxyz, vxyz, fxyz, &Epot, &Ekin, &Pres, &Temp, Rho,
                             V, box_size);
@@ -191,14 +191,14 @@ static void idle_func(void)
         presm += Pres;
         mes++;
 
-        frames += tmes;
-        if (frames % trun == 0) {
+        frames += TMES;
+        if (frames % TRUN == 0) {
             switcher = 2;
         }
 
     } else if (switcher == 0) { // loop de equilibración
 
-        while (frames % teq != 0) {
+        while (frames % TEQ != 0) {
 
             velocity_verlet(rxyz, vxyz, fxyz, &Epot, &Ekin, &Pres, &Temp, Rho,
                             V, box_size);
@@ -270,11 +270,11 @@ int main(int argc, char** argv)
     // parametros iniciales para que los pueda usar (antes de modificar)
     // `idle_func`
     srand(SEED);
-    Rho = Rhoi;
+    Rho = RHOI;
     Rhob = Rho;
     V = (double)N / Rho;
     box_size = cbrt(V);
-    tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(rcut, -9) - pow(rcut, -3)) / 3.0;
+    tail = 16.0 * M_PI * Rho * ((2.0 / 3.0) * pow(RCUT, -9) - pow(RCUT, -3)) / 3.0;
     Etail = tail * (double)N;
     Ptail = tail * Rho;
 
@@ -286,9 +286,9 @@ int main(int argc, char** argv)
 
     printf("# Número de partículas:      %d\n", N);
     printf("# Temperatura de referencia: %.2f\n", T0);
-    printf("# Pasos de equilibración:    %d\n", teq);
-    printf("# Pasos de medición:         %d\n", trun - teq);
-    printf("# (mediciones cada %d pasos)\n", tmes);
+    printf("# Pasos de equilibración:    %d\n", TEQ);
+    printf("# Pasos de medición:         %d\n", TRUN - TEQ);
+    printf("# (mediciones cada %d pasos)\n", TMES);
 
     open_glut_window();
 
