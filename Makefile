@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS	= -O0
-WFLAGS	= -std=gnu99 -Wall -Wextra -g
+WFLAGS	= -std=gnu11 -Wall -Wextra -g
 LDFLAGS	= -lm
 
 TARGETS	= tiny_md viz

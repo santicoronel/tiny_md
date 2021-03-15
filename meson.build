@@ -1,4 +1,6 @@
-project('tiny_md', 'c', default_options: [ 'warning_level=2' ])
+project('tiny_md', 'c',
+        default_options: [ 'c_std=gnu11', 'warning_level=2' ]
+)
 
 cc = meson.get_compiler('c')
 
