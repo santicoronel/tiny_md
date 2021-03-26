@@ -4,6 +4,9 @@
 #include <math.h>
 #include <stdlib.h> // rand()
 
+#define ECUT (4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
+
+
 void init_pos(double* rxyz, const double rho)
 {
     // inicialización de las posiciones de los átomos en un cristal FCC

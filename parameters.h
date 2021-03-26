@@ -8,7 +8,6 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
-#include <math.h> // sqrt(), cbrt(), pow(), M_PI
 #include <time.h> // time(NULL)
 
 
@@ -47,7 +46,5 @@
 #ifndef TMES // cada cuantos pasos se mide
 #define TMES 10
 #endif
-
-#define ECUT (4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
 #endif
