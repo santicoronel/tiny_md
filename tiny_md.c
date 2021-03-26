@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 500  // M_PI
 #include "core.h"
 #include "parameters.h"
 #include "wtime.h"
