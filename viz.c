@@ -295,5 +295,10 @@ int main(int argc, char** argv)
 
     glutMainLoop();
 
+    // Liberacion de memoria
+    free(rxyz);
+    free(fxyz);
+    free(vxyz);
+
     exit(0);
 }

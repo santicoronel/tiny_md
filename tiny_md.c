@@ -98,5 +98,14 @@ int main()
     printf("# Tiempo simulado = %f [fs]\n", t * 1.6);
     printf("# ns/day = %f\n", (1.6e-6 * t) / elapsed * 86400);
     //                       ^1.6 fs -> ns       ^sec -> day
+
+    // Cierre de archivos
+    fclose(file_thermo);
+    fclose(file_xyz);
+
+    // Liberacion de memoria
+    free(rxyz);
+    free(fxyz);
+    free(vxyz);
     return 0;
 }
