@@ -10,9 +10,9 @@
 
 int main()
 {
-    FILE *file_xyz, *file_thermo;
-    file_xyz = fopen("trajectory.xyz", "w");
-    file_thermo = fopen("thermo.log", "w");
+    //FILE *file_xyz, *file_thermo;
+    //file_xyz = fopen("trajectory.xyz", "w");
+    //file_thermo = fopen("thermo.log", "w");
     double Ekin, Epot, Temp, Pres; // variables macroscopicas
     double Rho, cell_V, cell_L, tail, Etail, Ptail;
     double *rxyz, *vxyz, *fxyz; // variables microscopicas
@@ -26,8 +26,8 @@ int main()
     printf("# Pasos de equilibración:    %d\n", TEQ);
     printf("# Pasos de medición:         %d\n", TRUN - TEQ);
     printf("# (mediciones cada %d pasos)\n", TMES);
-    printf("# densidad, volumen, energía potencial media, presión media\n");
-    fprintf(file_thermo, "# t Temp Pres Epot Etot\n");
+    //printf("# densidad, volumen, energía potencial media, presión media\n");
+    //fprintf(file_thermo, "# t Temp Pres Epot Etot\n");
 
     srand(SEED);
     double t = 0.0, sf;
@@ -81,16 +81,16 @@ int main()
                 presm += Pres;
                 mes++;
 
-                fprintf(file_thermo, "%f %f %f %f %f\n", t, Temp, Pres, Epot, Epot + Ekin);
-                fprintf(file_xyz, "%d\n\n", N);
-                for (int k = 0; k < 3 * N; k += 3) {
-                    fprintf(file_xyz, "Ar %e %e %e\n", rxyz[k + 0], rxyz[k + 1], rxyz[k + 2]);
-                }
+                //fprintf(file_thermo, "%f %f %f %f %f\n", t, Temp, Pres, Epot, Epot + Ekin);
+                //fprintf(file_xyz, "%d\n\n", N);
+                //for (int k = 0; k < 3 * N; k += 3) {
+                //    fprintf(file_xyz, "Ar %e %e %e\n", rxyz[k + 0], rxyz[k + 1], rxyz[k + 2]);
+                //}
             }
 
             t += DT;
         }
-        printf("%f\t%f\t%f\t%f\n", Rho, cell_V, epotm / (double)mes, presm / (double)mes);
+        //printf("%f\t%f\t%f\t%f\n", Rho, cell_V, epotm / (double)mes, presm / (double)mes);
     }
 
     double elapsed = wtime() - start;
@@ -100,8 +100,8 @@ int main()
     //                       ^1.6 fs -> ns       ^sec -> day
 
     // Cierre de archivos
-    fclose(file_thermo);
-    fclose(file_xyz);
+    //fclose(file_thermo);
+    //fclose(file_xyz);
 
     // Liberacion de memoria
     free(rxyz);
