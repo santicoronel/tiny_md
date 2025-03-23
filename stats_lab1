@@ -1,0 +1,22 @@
+atom :
+
+CFLAGS = -02 -ffast-math -march=native
+N = 2048
+
+con doubles : N^2/t = 21023.36
+con floats : N^2/t = 12562.82
+
+CFLAGS = -Ofast -march=native
+N = 2048
+
+con doubles : N^2/t = 20969.72
+con floats : N^2/t = 12501.67
+
+CFLAGS = -O3 -ffast-math -march=native
+N = 2048
+
+con doubles : N^2/t = 21164.39
+con floats : N^2/t = 12479.40
+
+CONCLUSION: por algun motivo con doubles va el DOBLE de rapido
+TODO: probar cache aware `forces`
