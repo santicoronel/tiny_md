@@ -1,2 +1,2 @@
 #pragma once
-double wtime(void);
+float wtime(void);

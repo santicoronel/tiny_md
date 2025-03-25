@@ -20,12 +20,29 @@ con floats : N^2/t = 12479.40
 
 ------------------------------------------------------
 
-CFLAGS = -02 -ffast-math -march=native
+CFLAGS = -03 -ffast-math -march=native
 N = 2916 (m = 9)
 con doubles: 21770.54
 con floats (ahora si!!): 22172.24
 
-por ahora, mejora de 1% :|
+mejora de 2% :|
 tal vez con N mas grande mejore, no lo se
 
+-------------------------------------------------------
+
+CFLAGS = -03 -ffast-math -march=native
+
+aplanando ifs en funciones estaticas `minum_image` y `pbc` en `core.c`
+
+N = 2048 (m = 8)
+32704.12
+
+N = 2916 (m = 9)
+34286.52
+
+mejora de 50% c:
+----------------------------------------------------
+
 TODO: probar cache aware `forces`
+
+
