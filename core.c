@@ -151,7 +151,7 @@ __attribute_maybe_unused__ static void forces0(const float* rxyz, float* fxyz, f
 void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
     const float* temp, const float rho, const float V, const float L)
 {
-    forces1(rxyz, fxyz, epot, pres, temp, rho, V, L) ;
+    forces0(rxyz, fxyz, epot, pres, temp, rho, V, L) ;
 
 }
 
