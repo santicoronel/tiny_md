@@ -75,16 +75,19 @@ void init_vel(double* vxyz, double* temp, double* ekin)
 }
 
 
-static double minimum_image(double cordi, const double cell_length)
+static float minimum_image(const float cordi, const float cell_length)
 {
     // imagen más cercana
-
-    if (cordi <= -0.5 * cell_length) {
+/*
+    if (cordi <= -0.5f * cell_length) {
         cordi += cell_length;
-    } else if (cordi > 0.5 * cell_length) {
+    } else if (cordi > 0.5f * cell_length) {
         cordi -= cell_length;
     }
     return cordi;
+*/
+   float t = 0.5f * cell_length;
+   return cordi + cell_length * ((cordi <= -t) - (cordi > t));
 }
 
 
