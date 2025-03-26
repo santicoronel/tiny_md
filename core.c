@@ -4,14 +4,14 @@
 #include <math.h>
 #include <stdlib.h> // rand()
 
-#define ECUT (4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
+#define ECUT (float)(4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
 
-void init_pos(double* rxyz, const double rho)
+void init_pos(float* rxyz,const float rho)
 {
     // inicialización de las posiciones de los átomos en un cristal FCC
 
-    double a = cbrt(4.0 / rho);
+    float a = cbrt(4.0f / rho);
     int nucells = ceil(cbrt((double)N / 4.0));
     int idx = 0;
 
@@ -22,17 +22,17 @@ void init_pos(double* rxyz, const double rho)
                 rxyz[idx + 1] = j * a; // y
                 rxyz[idx + 2] = k * a; // z
                     // del mismo átomo
-                rxyz[idx + 3] = (i + 0.5) * a;
-                rxyz[idx + 4] = (j + 0.5) * a;
+                rxyz[idx + 3] = (i + 0.5f) * a;
+                rxyz[idx + 4] = (j + 0.5f) * a;
                 rxyz[idx + 5] = k * a;
 
-                rxyz[idx + 6] = (i + 0.5) * a;
+                rxyz[idx + 6] = (i + 0.5f) * a;
                 rxyz[idx + 7] = j * a;
-                rxyz[idx + 8] = (k + 0.5) * a;
+                rxyz[idx + 8] = (k + 0.5f) * a;
 
                 rxyz[idx + 9] = i * a;
-                rxyz[idx + 10] = (j + 0.5) * a;
-                rxyz[idx + 11] = (k + 0.5) * a;
+                rxyz[idx + 10] = (j + 0.5f) * a;
+                rxyz[idx + 11] = (k + 0.5f) * a;
 
                 idx += 12;
             }
@@ -41,16 +41,16 @@ void init_pos(double* rxyz, const double rho)
 }
 
 
-void init_vel(double* vxyz, double* temp, double* ekin)
+void init_vel(float* vxyz,float* temp,float* ekin)
 {
     // inicialización de velocidades aleatorias
 
-    double sf, sumvx = 0.0, sumvy = 0.0, sumvz = 0.0, sumv2 = 0.0;
+    float sf, sumvx = 0.0f, sumvy = 0.0f, sumvz = 0.0f, sumv2 = 0.0f;
 
     for (int i = 0; i < 3 * N; i += 3) {
-        vxyz[i + 0] = rand() / (double)RAND_MAX - 0.5;
-        vxyz[i + 1] = rand() / (double)RAND_MAX - 0.5;
-        vxyz[i + 2] = rand() / (double)RAND_MAX - 0.5;
+        vxyz[i + 0] = rand() / (float)RAND_MAX - 0.5f;
+        vxyz[i + 1] = rand() / (float)RAND_MAX - 0.5f;
+        vxyz[i + 2] = rand() / (float)RAND_MAX - 0.5f;
 
         sumvx += vxyz[i + 0];
         sumvy += vxyz[i + 1];
@@ -59,12 +59,12 @@ void init_vel(double* vxyz, double* temp, double* ekin)
             + vxyz[i + 2] * vxyz[i + 2];
     }
 
-    sumvx /= (double)N;
-    sumvy /= (double)N;
-    sumvz /= (double)N;
-    *temp = sumv2 / (3.0 * N);
-    *ekin = 0.5 * sumv2;
-    sf = sqrt(T0 / *temp);
+    sumvx /= (float)N;
+    sumvy /= (float)N;
+    sumvz /= (float)N;
+    *temp = sumv2 / (3.0f * N);
+    *ekin = 0.5f * sumv2;
+    sf = (float)sqrt(T0 / *temp);
 
     for (int i = 0; i < 3 * N; i += 3) { // elimina la velocidad del centro de masa
         // y ajusta la temperatura
@@ -90,46 +90,45 @@ static float minimum_image(const float cordi, const float cell_length)
    return cordi + cell_length * ((cordi <= -t) - (cordi > t));
 }
 
-
-void forces(const double* rxyz, double* fxyz, double* epot, double* pres,
-            const double* temp, const double rho, const double V, const double L)
+__attribute_maybe_unused__ static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
+            const float* temp, const float rho, const float V, const float L)
 {
     // calcula las fuerzas LJ (12-6)
 
     for (int i = 0; i < 3 * N; i++) {
-        fxyz[i] = 0.0;
+        fxyz[i] = 0.0f;
     }
-    double pres_vir = 0.0;
-    double rcut2 = RCUT * RCUT;
-    *epot = 0.0;
+    float pres_vir = 0.0f;
+    float rcut2 = RCUT * RCUT;
+    *epot = 0.0f;
 
     for (int i = 0; i < 3 * (N - 1); i += 3) {
 
-        double xi = rxyz[i + 0];
-        double yi = rxyz[i + 1];
-        double zi = rxyz[i + 2];
+        float xi = rxyz[i + 0];
+        float yi = rxyz[i + 1];
+        float zi = rxyz[i + 2];
 
         for (int j = i + 3; j < 3 * N; j += 3) {
 
-            double xj = rxyz[j + 0];
-            double yj = rxyz[j + 1];
-            double zj = rxyz[j + 2];
+            float xj = rxyz[j + 0];
+            float yj = rxyz[j + 1];
+            float zj = rxyz[j + 2];
 
             // distancia mínima entre r_i y r_j
-            double rx = xi - xj;
+            float rx = xi - xj;
             rx = minimum_image(rx, L);
-            double ry = yi - yj;
+            float ry = yi - yj;
             ry = minimum_image(ry, L);
-            double rz = zi - zj;
+            float rz = zi - zj;
             rz = minimum_image(rz, L);
 
-            double rij2 = rx * rx + ry * ry + rz * rz;
+            float rij2 = rx * rx + ry * ry + rz * rz;
 
             if (rij2 <= rcut2) {
-                double r2inv = 1.0 / rij2;
-                double r6inv = r2inv * r2inv * r2inv;
+                float r2inv = 1.0f / rij2;
+                float r6inv = r2inv * r2inv * r2inv;
 
-                double fr = 24.0 * r2inv * r6inv * (2.0 * r6inv - 1.0);
+                float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
 
                 fxyz[i + 0] += fr * rx;
                 fxyz[i + 1] += fr * ry;
@@ -139,59 +138,67 @@ void forces(const double* rxyz, double* fxyz, double* epot, double* pres,
                 fxyz[j + 1] -= fr * ry;
                 fxyz[j + 2] -= fr * rz;
 
-                *epot += 4.0 * r6inv * (r6inv - 1.0) - ECUT;
+                *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
                 pres_vir += fr * rij2;
             }
         }
     }
-    pres_vir /= (V * 3.0);
+    pres_vir /= (V * 3.0f);
     *pres = *temp * rho + pres_vir;
 }
 
 
-static double pbc(double cordi, const double cell_length)
+void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
+    const float* temp, const float rho, const float V, const float L)
+{
+    forces1(rxyz, fxyz, epot, pres, temp, rho, V, L) ;
+
+}
+
+static float pbc(float cordi, const float cell_length)
 {
     // condiciones periodicas de contorno coordenadas entre [0,L)
+/*
     if (cordi <= 0) {
         cordi += cell_length;
     } else if (cordi > cell_length) {
         cordi -= cell_length;
-    }
-    return cordi;
+    }*/
+    return cordi + cell_length * ((cordi <= 0) - (cordi > cell_length));
 }
 
 
-void velocity_verlet(double* rxyz, double* vxyz, double* fxyz, double* epot,
-                     double* ekin, double* pres, double* temp, const double rho,
-                     const double V, const double L)
+void velocity_verlet(float* rxyz,float* vxyz,float* fxyz,float* epot,
+                     float* ekin,float* pres,float* temp,const float rho,
+                     const float V,const float L)
 {
 
     for (int i = 0; i < 3 * N; i += 3) { // actualizo posiciones
-        rxyz[i + 0] += vxyz[i + 0] * DT + 0.5 * fxyz[i + 0] * DT * DT;
-        rxyz[i + 1] += vxyz[i + 1] * DT + 0.5 * fxyz[i + 1] * DT * DT;
-        rxyz[i + 2] += vxyz[i + 2] * DT + 0.5 * fxyz[i + 2] * DT * DT;
+        rxyz[i + 0] += vxyz[i + 0] * DT + 0.5f * fxyz[i + 0] * DT * DT;
+        rxyz[i + 1] += vxyz[i + 1] * DT + 0.5f * fxyz[i + 1] * DT * DT;
+        rxyz[i + 2] += vxyz[i + 2] * DT + 0.5f * fxyz[i + 2] * DT * DT;
 
         rxyz[i + 0] = pbc(rxyz[i + 0], L);
         rxyz[i + 1] = pbc(rxyz[i + 1], L);
         rxyz[i + 2] = pbc(rxyz[i + 2], L);
 
-        vxyz[i + 0] += 0.5 * fxyz[i + 0] * DT;
-        vxyz[i + 1] += 0.5 * fxyz[i + 1] * DT;
-        vxyz[i + 2] += 0.5 * fxyz[i + 2] * DT;
+        vxyz[i + 0] += 0.5f * fxyz[i + 0] * DT;
+        vxyz[i + 1] += 0.5f * fxyz[i + 1] * DT;
+        vxyz[i + 2] += 0.5f * fxyz[i + 2] * DT;
     }
 
     forces(rxyz, fxyz, epot, pres, temp, rho, V, L); // actualizo fuerzas
 
-    double sumv2 = 0.0;
+    float sumv2 = 0.0f;
     for (int i = 0; i < 3 * N; i += 3) { // actualizo velocidades
-        vxyz[i + 0] += 0.5 * fxyz[i + 0] * DT;
-        vxyz[i + 1] += 0.5 * fxyz[i + 1] * DT;
-        vxyz[i + 2] += 0.5 * fxyz[i + 2] * DT;
+        vxyz[i + 0] += 0.5f * fxyz[i + 0] * DT;
+        vxyz[i + 1] += 0.5f * fxyz[i + 1] * DT;
+        vxyz[i + 2] += 0.5f * fxyz[i + 2] * DT;
 
         sumv2 += vxyz[i + 0] * vxyz[i + 0] + vxyz[i + 1] * vxyz[i + 1]
             + vxyz[i + 2] * vxyz[i + 2];
     }
 
-    *ekin = 0.5 * sumv2;
-    *temp = sumv2 / (3.0 * N);
+    *ekin = 0.5f * sumv2;
+    *temp = sumv2 / (3.0f * N);
 }
