@@ -1,6 +1,6 @@
 CC      = gcc
-CFLAGS	= -march=native -O3 -ffast-math
-WFLAGS	= -std=c11 -Werror -Wall -Wextra
+CFLAGS	= -g -march=native -O3 -ffast-math
+WFLAGS	= -std=c11 -Wall -Wextra -Werror
 LDFLAGS	= -lm
 
 TARGETS	= tiny_md viz
