@@ -10,9 +10,16 @@
 
 #include <time.h> // time(NULL)
 
+#ifndef M // número de particulas (debe ser un 4m^3 para el cristal inicial)
+#define M 4
+#endif
+
+#ifndef BLOCK
+#define BLOCK 4 * M * M
+#endif
 
 #ifndef N // número de particulas (debe ser un 4m^3 para el cristal inicial)
-#define N 256
+#define N 4 * M * M * M
 #endif
 
 #ifndef SEED // rand SEED para las velocidades
