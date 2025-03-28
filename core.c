@@ -90,7 +90,7 @@ static float minimum_image(const float cordi, const float cell_length)
    return cordi + cell_length * ((cordi <= -t) - (cordi > t));
 }
 
-static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
+void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
             const float* temp, const float rho, const float V, const float L)
 {
     // calcula las fuerzas LJ (12-6)
@@ -102,7 +102,9 @@ static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
     float rcut2 = RCUT * RCUT;
     *epot = 0.0f;
 
-    for (int i = 0; i < 3 * (N - 1); i += 3) {
+#ifndef TILING
+
+    for (unsigned int i = 0; i < 3 * (N - 1); i += 3) {
 
         float xi = rxyz[i + 0];
         float yi = rxyz[i + 1];
@@ -143,17 +145,67 @@ static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
             }
         }
     }
+
+#elif
+
+    unsigned int block = 3 * BLOCK;
+
+
+    for (unsigned int i = 0; i < 3 * N; i += block) {
+
+        char off = 1;
+        for (unsigned int j = i; j < 3 * N; j += block) {
+            
+            for (unsigned int ii = i; ii < i + block - 3 * off; ii += 3) {
+
+                float xi = rxyz[ii + 0];
+                float yi = rxyz[ii + 1];
+                float zi = rxyz[ii + 2];
+
+                for (unsigned int jj = off*(ii + 3 - j) + j; jj < j + block; jj += 3) {
+
+                    float xj = rxyz[jj + 0];
+                    float yj = rxyz[jj + 1];
+                    float zj = rxyz[jj + 2];
+
+                    // distancia mínima entre r_i y r_j
+                    float rx = xi - xj;
+                    rx = minimum_image(rx, L);
+                    float ry = yi - yj;
+                    ry = minimum_image(ry, L);
+                    float rz = zi - zj;
+                    rz = minimum_image(rz, L);
+
+                    float rij2 = rx * rx + ry * ry + rz * rz;
+
+                    if (rij2 <= rcut2) {
+                        float r2inv = 1.0f / rij2;
+                        float r6inv = r2inv * r2inv * r2inv;
+
+                        float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
+
+                        fxyz[ii + 0] += fr * rx;
+                        fxyz[ii + 1] += fr * ry;
+                        fxyz[ii + 2] += fr * rz;
+
+                        fxyz[jj + 0] -= fr * rx;
+                        fxyz[jj + 1] -= fr * ry;
+                        fxyz[jj + 2] -= fr * rz;
+
+                        *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
+                        pres_vir += fr * rij2;
+                    }
+                }
+            }
+            off = 0;
+        }
+    }
+#endif
+    
     pres_vir /= (V * 3.0f);
     *pres = *temp * rho + pres_vir;
 }
 
-
-void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
-    const float* temp, const float rho, const float V, const float L)
-{
-    forces0(rxyz, fxyz, epot, pres, temp, rho, V, L) ;
-
-}
 
 static float pbc(float cordi, const float cell_length)
 {
