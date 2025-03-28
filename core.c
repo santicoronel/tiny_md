@@ -90,7 +90,7 @@ static float minimum_image(const float cordi, const float cell_length)
    return cordi + cell_length * ((cordi <= -t) - (cordi > t));
 }
 
-__attribute_maybe_unused__ static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
+static void forces0(const float* rxyz, float* fxyz, float* epot, float* pres,
             const float* temp, const float rho, const float V, const float L)
 {
     // calcula las fuerzas LJ (12-6)

@@ -7,13 +7,14 @@ TARGETS	= tiny_md viz
 SOURCES	= $(shell echo *.c)
 OBJECTS = core.o wtime.o
 
+tiny_md: tiny_md.o $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 all: $(TARGETS)
 
 viz: viz.o $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lGL -lGLU -lglut
 
-tiny_md: tiny_md.o $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(WFLAGS) $(CPPFLAGS) $(CFLAGS) -c $<
