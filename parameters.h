@@ -14,6 +14,8 @@
 #define M 4
 #endif
 
+// #define TILING
+
 #ifdef TILING
 #ifndef BLOCK
 #define BLOCK 4 * M * M
