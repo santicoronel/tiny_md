@@ -5,4 +5,4 @@
 
 usr=$1 ;
 shift ;
-scp $@ cp2025_$usr@atom.famaf.unc.edu.ar:/users/cp2025/cp2025_$usr
+scp $@ cp2025_$usr@atom.famaf.unc.edu.ar:/users/cp2025/cp2025_$usr/tiny_md
