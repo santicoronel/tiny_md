@@ -26,7 +26,7 @@ int main()
     printf("# Pasos de equilibración:    %d\n", TEQ);
     printf("# Pasos de medición:         %d\n", TRUN - TEQ);
     printf("# (mediciones cada %d pasos)\n", TMES);
-    //printf("# densidad, volumen, energía potencial media, presión media\n");
+    printf("# densidad, volumen, energía potencial media, presión media\n");
     //fprintf(file_thermo, "# t Temp Pres Epot Etot\n");
 
     srand(SEED);
