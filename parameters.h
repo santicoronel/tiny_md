@@ -10,8 +10,10 @@
 
 #include <time.h> // time(NULL)
 
+#define SIMD_INTRINSICS
+
 #ifndef M // número de particulas (debe ser un 4m^3 para el cristal inicial)
-#define M 4
+#define M 8
 #endif
 
 // #define TILING
@@ -21,6 +23,7 @@
 #define BLOCK 4 * M * M
 #endif
 #endif
+
 
 #ifndef N // número de particulas (debe ser un 4m^3 para el cristal inicial)
 #define N 4 * M * M * M

@@ -3,6 +3,11 @@
 
 #include <math.h>
 #include <stdlib.h> // rand()
+#include <immintrin.h>
+#include <stdio.h>
+#include <assert.h>
+#include <string.h>
+
 
 #define ECUT (float)(4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
@@ -13,28 +18,29 @@ void init_pos(float* rxyz,const float rho)
 
     float a = cbrt(4.0f / rho);
     int nucells = ceil(cbrt((double)N / 4.0));
+    float *rx = rxyz, *ry = rxyz + N, *rz = rxyz + 2*N;
     int idx = 0;
 
     for (int i = 0; i < nucells; i++) {
         for (int j = 0; j < nucells; j++) {
             for (int k = 0; k < nucells; k++) {
-                rxyz[idx + 0] = i * a; // x
-                rxyz[idx + 1] = j * a; // y
-                rxyz[idx + 2] = k * a; // z
+                rx[idx] = i * a; // x
+                ry[idx] = j * a; // y
+                rz[idx] = k * a; // z
                     // del mismo átomo
-                rxyz[idx + 3] = (i + 0.5f) * a;
-                rxyz[idx + 4] = (j + 0.5f) * a;
-                rxyz[idx + 5] = k * a;
+                rx[idx + 1] = (i + 0.5f) * a;
+                ry[idx + 1] = (j + 0.5f) * a;
+                rz[idx + 1] = k * a;
 
-                rxyz[idx + 6] = (i + 0.5f) * a;
-                rxyz[idx + 7] = j * a;
-                rxyz[idx + 8] = (k + 0.5f) * a;
+                rx[idx + 2] = (i + 0.5f) * a;
+                ry[idx + 2] = j * a;
+                rz[idx + 2] = (k + 0.5f) * a;
 
-                rxyz[idx + 9] = i * a;
-                rxyz[idx + 10] = (j + 0.5f) * a;
-                rxyz[idx + 11] = (k + 0.5f) * a;
+                rx[idx + 3] = i * a;
+                ry[idx + 3] = (j + 0.5f) * a;
+                rz[idx + 3] = (k + 0.5f) * a;
 
-                idx += 12;
+                idx += 4;
             }
         }
     }
@@ -46,17 +52,17 @@ void init_vel(float* vxyz,float* temp,float* ekin)
     // inicialización de velocidades aleatorias
 
     float sf, sumvx = 0.0f, sumvy = 0.0f, sumvz = 0.0f, sumv2 = 0.0f;
+    float *vx = vxyz, *vy = vxyz + N, *vz = vxyz + 2*N;
 
-    for (int i = 0; i < 3 * N; i += 3) {
-        vxyz[i + 0] = rand() / (float)RAND_MAX - 0.5f;
-        vxyz[i + 1] = rand() / (float)RAND_MAX - 0.5f;
-        vxyz[i + 2] = rand() / (float)RAND_MAX - 0.5f;
+    for (int i = 0; i < N; i += 1) {
+        vx[i] = rand() / (float)RAND_MAX - 0.5f;
+        vy[i] = rand() / (float)RAND_MAX - 0.5f;
+        vz[i] = rand() / (float)RAND_MAX - 0.5f;
 
-        sumvx += vxyz[i + 0];
-        sumvy += vxyz[i + 1];
-        sumvz += vxyz[i + 2];
-        sumv2 += vxyz[i + 0] * vxyz[i + 0] + vxyz[i + 1] * vxyz[i + 1]
-            + vxyz[i + 2] * vxyz[i + 2];
+        sumvx += vx[i];
+        sumvy += vy[i];
+        sumvz += vz[i];
+        sumv2 += vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i];
     }
 
     sumvx /= (float)N;
@@ -66,16 +72,22 @@ void init_vel(float* vxyz,float* temp,float* ekin)
     *ekin = 0.5f * sumv2;
     sf = (float)sqrt(T0 / *temp);
 
-    for (int i = 0; i < 3 * N; i += 3) { // elimina la velocidad del centro de masa
+    for (int i = 0; i < N; i += 1) { // elimina la velocidad del centro de masa
         // y ajusta la temperatura
-        vxyz[i + 0] = (vxyz[i + 0] - sumvx) * sf;
-        vxyz[i + 1] = (vxyz[i + 1] - sumvy) * sf;
-        vxyz[i + 2] = (vxyz[i + 2] - sumvz) * sf;
+        vx[i] = (vx[i] - sumvx) * sf;
+        vy[i] = (vy[i] - sumvy) * sf;
+        vz[i] = (vz[i] - sumvz) * sf;
     }
 }
 
 
-static float minimum_image(const float cordi, const float cell_length)
+static float minimum_image(float cordi, const float cell_length) {
+    float t = 0.5f * cell_length;
+    return cordi + cell_length * ((cordi <= -t) - (cordi > t));
+}
+
+#ifdef SIMD_INTRINSICS
+static __m256 minimum_image_v(__m256 cordi, const float cell_length)
 {
     // imagen más cercana
 /*
@@ -86,45 +98,65 @@ static float minimum_image(const float cordi, const float cell_length)
     }
     return cordi;
 */
-   float t = 0.5f * cell_length;
-   return cordi + cell_length * ((cordi <= -t) - (cordi > t));
+    __m256 t = _mm256_set1_ps(0.5f);
+    __m256 op_t = _mm256_set1_ps(-0.5f);
+    __m256 L = _mm256_set1_ps(cell_length);
+    __m256 mask_lower = _mm256_cmp_ps(cordi, _mm256_mul_ps(op_t, L), _CMP_LE_OQ);
+    __m256 mask_higher = _mm256_cmp_ps(cordi, _mm256_mul_ps(t, L), _CMP_GT_OQ);
+    cordi = _mm256_add_ps(cordi, _mm256_and_ps(L, mask_lower));
+    return _mm256_sub_ps(cordi, _mm256_and_ps(L, mask_higher));
 }
 
-void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
+static float horizontal_sum(__m256 v) {
+    v = _mm256_hadd_ps(v, v);
+    v = _mm256_hadd_ps(v, v);
+    v = _mm256_add_ps(v, _mm256_permute2f128_ps(v, v, 0x01));
+
+    return _mm256_cvtss_f32(v);
+}
+#endif
+
+void forces(float* rxyz, float* fxyz, float* epot, float* pres,
             const float* temp, const float rho, const float V, const float L)
 {
     // calcula las fuerzas LJ (12-6)
 
+    // printf("epot: %f, pres: %f\n", *epot, *pres);
+
     for (int i = 0; i < 3 * N; i++) {
         fxyz[i] = 0.0f;
     }
-    float pres_vir = 0.0f;
+
+    float *rx = rxyz, *ry = rxyz + N, *rz = rxyz + 2 * N;
+    float *fx = fxyz, *fy = fxyz + N, *fz = fxyz + 2 * N;
+
     float rcut2 = RCUT * RCUT;
     *epot = 0.0f;
+    float pres_vir = 0.0f;
 
-#ifndef TILING
+#ifndef SIMD_INTRINSICS
 
-    for (unsigned int i = 0; i < 3 * (N - 1); i += 3) {
+    for (int i = 0; i < (N - 1); i += 1) {
 
-        float xi = rxyz[i + 0];
-        float yi = rxyz[i + 1];
-        float zi = rxyz[i + 2];
+        float xi = rx[i];
+        float yi = ry[i];
+        float zi = rz[i];
 
-        for (int j = i + 3; j < 3 * N; j += 3) {
+        for (int j = i + 1; j < N; j += 1) {
 
-            float xj = rxyz[j + 0];
-            float yj = rxyz[j + 1];
-            float zj = rxyz[j + 2];
+            float xj = rx[j];
+            float yj = ry[j];
+            float zj = rz[j];
 
             // distancia mínima entre r_i y r_j
-            float rx = xi - xj;
-            rx = minimum_image(rx, L);
-            float ry = yi - yj;
-            ry = minimum_image(ry, L);
-            float rz = zi - zj;
-            rz = minimum_image(rz, L);
+            float xij = xi - xj;
+            xij = minimum_image(xij, L);
+            float yij = yi - yj;
+            yij = minimum_image(yij, L);
+            float zij = zi - zj;
+            zij = minimum_image(zij, L);
 
-            float rij2 = rx * rx + ry * ry + rz * rz;
+            float rij2 = xij * xij + yij * yij + zij * zij;
 
             if (rij2 <= rcut2) {
                 float r2inv = 1.0f / rij2;
@@ -132,13 +164,13 @@ void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
 
                 float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
 
-                fxyz[i + 0] += fr * rx;
-                fxyz[i + 1] += fr * ry;
-                fxyz[i + 2] += fr * rz;
+                fx[i] += fr * xij;
+                fy[i] += fr * yij;
+                fz[i] += fr * zij;
 
-                fxyz[j + 0] -= fr * rx;
-                fxyz[j + 1] -= fr * ry;
-                fxyz[j + 2] -= fr * rz;
+                fx[j] -= fr * xij;
+                fy[j] -= fr * yij;
+                fz[j] -= fr * zij;
 
                 *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
                 pres_vir += fr * rij2;
@@ -146,109 +178,196 @@ void forces(const float* rxyz, float* fxyz, float* epot, float* pres,
         }
     }
 
-#elif
-
-    unsigned int block = 3 * BLOCK;
+#else
 
 
-    for (unsigned int i = 0; i < 3 * N; i += block) {
+    __m256 rcut2_v = _mm256_set1_ps(rcut2);
+    __m256 ecut = _mm256_set1_ps(ECUT);
+    __m256 epot_v = _mm256_setzero_ps();
+    __m256 pres_v = _mm256_setzero_ps();
 
-        char off = 1;
-        for (unsigned int j = i; j < 3 * N; j += block) {
+    for (unsigned int i = 0; i < (N - 1); i += 1) {
+
+        __m256 xi = _mm256_set1_ps(rx[i]);
+        __m256 yi = _mm256_set1_ps(ry[i]);
+        __m256 zi = _mm256_set1_ps(rz[i]);
+
+        __m256 fxi = _mm256_setzero_ps();
+        __m256 fyi = _mm256_setzero_ps();
+        __m256 fzi = _mm256_setzero_ps();
+
+        int j;
+
+        for (j = i + 1; j + 8 < N; j += 8) {
+
+            __m256 xj = _mm256_loadu_ps(rx + j);
+            __m256 yj = _mm256_loadu_ps(ry + j);
+            __m256 zj = _mm256_loadu_ps(rz + j);
+
+            // distancia mínima entre r_i y r_j
+            __m256 xij = _mm256_sub_ps(xi, xj);
+            // rx = rx + L * ((rx <= -t) - (rx > t));
+            xij = minimum_image_v(xij, L);
+
+            __m256 yij = _mm256_sub_ps(yi, yj);
+            // rx = rx + L * ((rx <= -t) - (rx > t));
+            yij = minimum_image_v(yij, L);
+
+            __m256 zij = _mm256_sub_ps(zi, zj);
+            // rx = rx + L * ((rx <= -t) - (rx > t));
+            zij = minimum_image_v(zij, L);
+
+            // float rij2 = rx * rx + ry * ry + rz * rz;
+            __m256 rij2 = _mm256_add_ps(_mm256_mul_ps(xij, xij),
+                                        _mm256_add_ps(_mm256_mul_ps(yij, yij),
+                                                      _mm256_mul_ps(zij, zij)));
+
+            // if (rij2 < rcut2) ...
+            __m256 mask_rcut = _mm256_cmp_ps(rij2, rcut2_v, _CMP_LE_OQ);
+
+            if(_mm256_testz_ps(mask_rcut, mask_rcut)) continue; // sexo
+
+            // calculo de fr
+            __m256 r2inv = _mm256_div_ps(_mm256_set1_ps(1.0f), rij2);
+            __m256 r6inv = _mm256_mul_ps(r2inv, _mm256_mul_ps(r2inv, r2inv));
+            __m256 fr = _mm256_mul_ps(_mm256_set1_ps(24.0f),
+                                      _mm256_mul_ps(r2inv,
+                                                    _mm256_mul_ps(r6inv,
+                                                                  _mm256_sub_ps(_mm256_mul_ps(_mm256_set1_ps(2.0f), r6inv),
+                                                                                _mm256_set1_ps(1.0f)))));
+
+
+            // actualizamos fxyz
+
+            __m256 dfx = _mm256_mul_ps(fr, xij);
+            __m256 dfy = _mm256_mul_ps(fr, yij);
+            __m256 dfz = _mm256_mul_ps(fr, zij);
+
+            // i
             
-            for (unsigned int ii = i; ii < i + block - 3 * off; ii += 3) {
+            fxi = _mm256_add_ps(fxi, _mm256_and_ps(dfx, mask_rcut));
 
-                float xi = rxyz[ii + 0];
-                float yi = rxyz[ii + 1];
-                float zi = rxyz[ii + 2];
+            fyi = _mm256_add_ps(fyi, _mm256_and_ps(dfy, mask_rcut));
 
-                for (unsigned int jj = off*(ii + 3 - j) + j; jj < j + block; jj += 3) {
+            fzi = _mm256_add_ps(fzi, _mm256_and_ps(dfz, mask_rcut));
 
-                    float xj = rxyz[jj + 0];
-                    float yj = rxyz[jj + 1];
-                    float zj = rxyz[jj + 2];
 
-                    // distancia mínima entre r_i y r_j
-                    float rx = xi - xj;
-                    rx = minimum_image(rx, L);
-                    float ry = yi - yj;
-                    ry = minimum_image(ry, L);
-                    float rz = zi - zj;
-                    rz = minimum_image(rz, L);
+            // j
+            _mm256_storeu_ps(fx + j, _mm256_sub_ps(_mm256_loadu_ps(fx + j),
+                                                _mm256_and_ps(dfx, mask_rcut)));
 
-                    float rij2 = rx * rx + ry * ry + rz * rz;
+            _mm256_storeu_ps(fy + j, _mm256_sub_ps(_mm256_loadu_ps(fy + j),
+                                                _mm256_and_ps(dfy, mask_rcut)));
+            _mm256_storeu_ps(fz + j, _mm256_sub_ps(_mm256_loadu_ps(fz + j),
+                                                _mm256_and_ps(dfz, mask_rcut)));
 
-                    if (rij2 <= rcut2) {
-                        float r2inv = 1.0f / rij2;
-                        float r6inv = r2inv * r2inv * r2inv;
+            // actualizamos epot
+            __m256 ep = _mm256_sub_ps(_mm256_mul_ps(_mm256_set1_ps(4.0f),
+            _mm256_mul_ps(r6inv,
+            _mm256_sub_ps(r6inv, _mm256_set1_ps(1.0f)))),
+            ecut);
+            epot_v = _mm256_add_ps(epot_v, _mm256_and_ps(ep, mask_rcut));
+            
+            // actualizamos pres
+            __m256 pv = _mm256_mul_ps(fr, rij2);
+            pres_v = _mm256_add_ps(pres_v, _mm256_and_ps(pv, mask_rcut));
 
-                        float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
-
-                        fxyz[ii + 0] += fr * rx;
-                        fxyz[ii + 1] += fr * ry;
-                        fxyz[ii + 2] += fr * rz;
-
-                        fxyz[jj + 0] -= fr * rx;
-                        fxyz[jj + 1] -= fr * ry;
-                        fxyz[jj + 2] -= fr * rz;
-
-                        *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
-                        pres_vir += fr * rij2;
-                    }
-                }
-            }
-            off = 0;
         }
+
+        fx[i] += horizontal_sum(fxi);
+        fy[i] += horizontal_sum(fyi);
+        fz[i] += horizontal_sum(fzi);
+        
+        // calculamos el resto (< 7 iteraciones)
+        for (; j < N; j++) {
+
+            // distancia mínima entre r_i y r_j
+            float xij = rx[i] - rx[j];
+            xij = minimum_image(xij, L);
+
+            float yij = ry[i] - ry[j];
+            yij = minimum_image(yij, L);
+
+            float zij = rz[i] - rz[j];
+            zij = minimum_image(zij, L);
+
+            float rij2 = xij * xij + yij * yij + zij * zij;
+            if (rij2 < rcut2) {
+                float r2inv = 1.0f / rij2;
+                float r6inv = r2inv * r2inv * r2inv;
+
+                float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
+
+                fx[i] += fr * xij;
+                fy[i] += fr * yij;
+                fz[i] += fr * zij;
+
+                fx[j] -= fr * xij;
+                fy[j] -= fr * yij;
+                fz[j] -= fr * zij;
+
+                *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
+                pres_vir += fr * rij2;
+            }
+        }
+        
     }
+
+    // acumular epot y pres
+    *epot += horizontal_sum(epot_v);
+    pres_vir += horizontal_sum(pres_v);
+
 #endif
-    
+
     pres_vir /= (V * 3.0f);
     *pres = *temp * rho + pres_vir;
-}
 
+}
 
 static float pbc(float cordi, const float cell_length)
 {
     // condiciones periodicas de contorno coordenadas entre [0,L)
-/*
-    if (cordi <= 0) {
-        cordi += cell_length;
-    } else if (cordi > cell_length) {
-        cordi -= cell_length;
-    }*/
+    /*
+        if (cordi <= 0) {
+            cordi += cell_length;
+        } else if (cordi > cell_length) {
+            cordi -= cell_length;
+        }*/
     return cordi + cell_length * ((cordi <= 0) - (cordi > cell_length));
 }
 
 
-void velocity_verlet(float* rxyz,float* vxyz,float* fxyz,float* epot,
-                     float* ekin,float* pres,float* temp,const float rho,
-                     const float V,const float L)
+void velocity_verlet(float* rxyz, float* vxyz, float* fxyz, float* epot,
+                        float* ekin, float* pres, float* temp, const float rho,
+                        const float V, const float L)
 {
+    float *rx = rxyz, *ry = rxyz + N, *rz = rxyz + 2 * N;
+    float *vx = vxyz, *vy = vxyz + N, *vz = vxyz + 2 * N;
+    float *fx = fxyz, *fy = fxyz + N, *fz = fxyz + 2 * N;
 
-    for (int i = 0; i < 3 * N; i += 3) { // actualizo posiciones
-        rxyz[i + 0] += vxyz[i + 0] * DT + 0.5f * fxyz[i + 0] * DT * DT;
-        rxyz[i + 1] += vxyz[i + 1] * DT + 0.5f * fxyz[i + 1] * DT * DT;
-        rxyz[i + 2] += vxyz[i + 2] * DT + 0.5f * fxyz[i + 2] * DT * DT;
+    for (int i = 0; i < N; i += 1) { // actualizo posiciones
+        rx[i] += vx[i] * DT + 0.5f * fx[i] * DT * DT;
+        ry[i] += vy[i] * DT + 0.5f * fy[i] * DT * DT;
+        rz[i] += vz[i] * DT + 0.5f * fz[i] * DT * DT;
 
-        rxyz[i + 0] = pbc(rxyz[i + 0], L);
-        rxyz[i + 1] = pbc(rxyz[i + 1], L);
-        rxyz[i + 2] = pbc(rxyz[i + 2], L);
+        rx[i] = pbc(rx[i], L);
+        ry[i] = pbc(ry[i], L);
+        rz[i] = pbc(rz[i], L);
 
-        vxyz[i + 0] += 0.5f * fxyz[i + 0] * DT;
-        vxyz[i + 1] += 0.5f * fxyz[i + 1] * DT;
-        vxyz[i + 2] += 0.5f * fxyz[i + 2] * DT;
+        vx[i] += 0.5f * fx[i] * DT;
+        vy[i] += 0.5f * fy[i] * DT;
+        vz[i] += 0.5f * fz[i] * DT;
     }
 
     forces(rxyz, fxyz, epot, pres, temp, rho, V, L); // actualizo fuerzas
 
     float sumv2 = 0.0f;
-    for (int i = 0; i < 3 * N; i += 3) { // actualizo velocidades
-        vxyz[i + 0] += 0.5f * fxyz[i + 0] * DT;
-        vxyz[i + 1] += 0.5f * fxyz[i + 1] * DT;
-        vxyz[i + 2] += 0.5f * fxyz[i + 2] * DT;
+    for (int i = 0; i < N; i += 1) { // actualizo velocidades
+        vx[i] += 0.5f * fx[i] * DT;
+        vy[i] += 0.5f * fy[i] * DT;
+        vz[i] += 0.5f * fz[i] * DT;
 
-        sumv2 += vxyz[i + 0] * vxyz[i + 0] + vxyz[i + 1] * vxyz[i + 1]
-            + vxyz[i + 2] * vxyz[i + 2];
+        sumv2 += vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i];
     }
 
     *ekin = 0.5f * sumv2;
