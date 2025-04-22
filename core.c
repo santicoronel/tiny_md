@@ -224,7 +224,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
             // if (rij2 < rcut2) ...
             __m256 mask_rcut = _mm256_cmp_ps(rij2, rcut2_v, _CMP_LE_OQ);
 
-            if(_mm256_testz_ps(mask_rcut, mask_rcut)) continue; // sexo
+	        if(!_mm256_movemask_ps(mask_rcut)) continue;
 
             // calculo de fr
             __m256 r2inv = _mm256_div_ps(_mm256_set1_ps(1.0f), rij2);
@@ -461,6 +461,9 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     *pres = *temp * rho + pres_vir;
 
 }
+
+
+
 
 static float pbc(float cordi, const float cell_length)
 {
