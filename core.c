@@ -8,6 +8,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <omp.h>
+
 
 #define ECUT (float)(4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
@@ -197,7 +199,13 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 
         unsigned int j;
 
-        for (j = i + 1; j + 8 < N; j += 8) {
+        #pragma omp declare reduction(vadd : __m256 : omp_out = _mm256_add_ps(omp_in, omp_out)) initializer(omp_priv=_mm256_setzero_ps())
+
+
+        #pragma omp parallel for default(shared) \
+            reduction(vadd:fxi) reduction(vadd:fyi) reduction(vadd:fzi) \
+            reduction(vadd:epot_v) reduction(vadd:pres_v)
+        for (j = i + 1; j < N - 8; j += 8) {
 
             __m256 xj = _mm256_loadu_ps(rx + j);
             __m256 yj = _mm256_loadu_ps(ry + j);
@@ -453,7 +461,6 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     // acumular epot y pres
     *epot += horizontal_sum(epot_v);
     pres_vir += horizontal_sum(pres_v);
-
 
 #endif
 

@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS	= -g -march=native -O3 -ffast-math
+CFLAGS	= -g -march=native -O3 -ffast-math -fopenmp
 WFLAGS	= -std=c11 -Wall -Wextra -Werror
 LDFLAGS	= -lm
 
