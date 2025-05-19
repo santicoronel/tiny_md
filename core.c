@@ -193,7 +193,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     #pragma omp parallel for default(shared) \
     reduction(vadd:epot_v) reduction(vadd:pres_v) \
     reduction(+:fx[:N]) reduction(+:fy[:N]) reduction(+:fz[:N]) \
-    schedule (dynamic, 64)
+    schedule (static, 64)
     for (unsigned int i = 0; i < N - 1; i++) {
 
         __m256 xi = _mm256_set1_ps(rx[i]);
