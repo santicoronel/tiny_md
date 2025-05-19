@@ -2,14 +2,27 @@
 
 mod="" #! mod="perf stat"
 
-if [ -z "$1" ]
+if [ -z "$2" ] 
     then
-        echo "Poné el numero de threads!! (por ej $> sh run.sh 2 4 8)"
+        echo "Tenes que poner el valor de M y número de threads!!"
+        echo "Por ej, con M=10:"
+        echo "$> sh run.sh 10 2 4 8"
     else
-        make clean && make tiny_md
-        echo "N,tiempo[s],métrica(N^2/t)" > log.csv
-        for nthreads in "$@"
-        do
-            OMP_NUM_THREADS=$nthreads $mod ./tiny_md
-        done
+        if [ ! -f log.csv ]
+            then echo "N,tiempo[s],métrica(N^2/t)" > log.csv
+        fi
+        M=$1
+        shift
+        make clean > /dev/null
+        make M=$M tiny_md >/dev/null 2> /dev/null
+        if [ ! -f tiny_md ]
+            then    
+                echo "Error de compilación (revisá los parámetros!)"
+            else
+                for nthreads in "$@"
+                do
+                    OMP_NUM_THREADS=$nthreads $mod ./tiny_md
+                    echo "------------------------------------------------------------------"
+                done
+        fi
 fi
