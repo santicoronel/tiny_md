@@ -9,7 +9,7 @@ if [ -z "$2" ]
         echo "$> sh run.sh 10 2 4 8"
     else
         if [ ! -f log.csv ]
-            then echo "N,tiempo[s],métrica(N^2/t)" > log.csv
+            then sh clear_log.sh > /dev/null
         fi
         M=$1
         shift
@@ -21,6 +21,7 @@ if [ -z "$2" ]
             else
                 for nthreads in "$@"
                 do
+                    printf '%d,' "$nthreads" >> log.csv
                     OMP_NUM_THREADS=$nthreads $mod ./tiny_md
                     echo "------------------------------------------------------------------"
                 done
