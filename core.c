@@ -187,6 +187,13 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 
 #ifndef TILING
 
+    #pragma omp declare reduction(vadd : __m256 : omp_out = _mm256_add_ps(omp_in, omp_out))\
+    initializer(omp_priv=_mm256_setzero_ps())
+
+    #pragma omp parallel for default(shared) \
+    reduction(vadd:epot_v) reduction(vadd:pres_v) \
+    reduction(+:fx[:N]) reduction(+:fy[:N]) reduction(+:fz[:N]) \
+    schedule (dynamic, 64)
     for (unsigned int i = 0; i < N - 1; i++) {
 
         __m256 xi = _mm256_set1_ps(rx[i]);
@@ -199,12 +206,6 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 
         unsigned int j;
 
-        #pragma omp declare reduction(vadd : __m256 : omp_out = _mm256_add_ps(omp_in, omp_out)) initializer(omp_priv=_mm256_setzero_ps())
-
-
-        #pragma omp parallel for default(shared) \
-            reduction(vadd:fxi) reduction(vadd:fyi) reduction(vadd:fzi) \
-            reduction(vadd:epot_v) reduction(vadd:pres_v)
         for (j = i + 1; j < N - 8; j += 8) {
 
             __m256 xj = _mm256_loadu_ps(rx + j);
@@ -258,8 +259,8 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 
             fzi = _mm256_add_ps(fzi, _mm256_and_ps(dfz, mask_rcut));
 
-
             // j
+            
             _mm256_storeu_ps(fx + j, _mm256_sub_ps(_mm256_loadu_ps(fx + j),
                                                 _mm256_and_ps(dfx, mask_rcut)));
 
@@ -268,7 +269,8 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
             _mm256_storeu_ps(fz + j, _mm256_sub_ps(_mm256_loadu_ps(fz + j),
                                                 _mm256_and_ps(dfz, mask_rcut)));
 
-            // actualizamos epot
+
+	    // actualizamos epot
             __m256 ep = _mm256_sub_ps(_mm256_mul_ps(_mm256_set1_ps(4.0f),
             _mm256_mul_ps(r6inv,
             _mm256_sub_ps(r6inv, _mm256_set1_ps(1.0f)))),
@@ -284,7 +286,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
         fx[i] += horizontal_sum(fxi);
         fy[i] += horizontal_sum(fyi);
         fz[i] += horizontal_sum(fzi);
-        
+            
         // calculamos el resto (< 7 iteraciones)
         for (; j < N; j++) {
 
