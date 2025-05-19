@@ -1,6 +1,7 @@
 #! /bin/sh
 
 mod="" #! mod="perf stat"
+env="" #! env="OMP_PROC_BIND=spread"
 
 if [ -z "$2" ] 
     then
@@ -22,7 +23,7 @@ if [ -z "$2" ]
                 for nthreads in "$@"
                 do
                     printf '%d,' "$nthreads" >> log.csv
-                    OMP_NUM_THREADS=$nthreads $mod ./tiny_md
+                    env $env OMP_NUM_THREADS=$nthreads $mod ./tiny_md
                     echo "------------------------------------------------------------------"
                 done
         fi
