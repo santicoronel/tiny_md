@@ -11,8 +11,10 @@
 int main()
 {
     //FILE *file_xyz, *file_thermo;
+    FILE *file_out;
     //file_xyz = fopen("trajectory.xyz", "w");
     //file_thermo = fopen("thermo.log", "w");
+    file_out = fopen("log.csv", "a");
     float Ekin, Epot, Temp, Pres; // variables macroscopicas
     float Rho, cell_V, cell_L, tail, Etail, Ptail;
     float *rxyz, *vxyz, *fxyz; // variables microscopicas
@@ -99,11 +101,15 @@ int main()
     printf("# ns/day = %f\n", (1.6e-6 * t) / elapsed * 86400);
     //                       ^1.6 fs -> ns       ^sec -> day
     // Métrica
-    printf ("# N^2/t = %f\n", N * N / elapsed);
+    float metrica = N * N / elapsed;
+    printf ("# N^2/t = %f\n", metrica);
+
+    fprintf(file_out, "%d,%f,%f\n", N, elapsed, metrica);
 
     // Cierre de archivos
     //fclose(file_thermo);
     //fclose(file_xyz);
+    fclose(file_out);
 
     // Liberacion de memoria
     free(rxyz);

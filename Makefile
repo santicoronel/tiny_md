@@ -3,6 +3,11 @@ CFLAGS	= -g -march=native -O3 -ffast-math -fopenmp
 WFLAGS	= -std=c11 -Wall -Wextra -Werror
 LDFLAGS	= -lm
 
+ifdef M
+CFLAGS += -DM=$(M)
+endif
+
+
 TARGETS	= tiny_md viz
 SOURCES	= $(shell echo *.c)
 OBJECTS = core.o wtime.o
