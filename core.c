@@ -131,8 +131,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     float *fx = fxyz, *fy = fxyz + N, *fz = fxyz + 2 * N;
 
     float rcut2 = RCUT * RCUT;
-    *epot = 0.0f;
-    float pres_vir = 0.0f;
+    float _epot = 0.0f, pres_vir = 0.0f;
 
 #ifndef SIMD_INTRINSICS
 
@@ -193,7 +192,8 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     #pragma omp parallel for default(shared) \
     reduction(vadd:epot_v) reduction(vadd:pres_v) \
     reduction(+:fx[:N]) reduction(+:fy[:N]) reduction(+:fz[:N]) \
-    schedule (static, 64)
+    reduction(+:_epot) reduction(+:pres_vir) \
+    schedule (dynamic, 64)
     for (unsigned int i = 0; i < N - 1; i++) {
 
         __m256 xi = _mm256_set1_ps(rx[i]);
@@ -315,7 +315,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
                 fy[j] -= fr * yij;
                 fz[j] -= fr * zij;
 
-                *epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
+                _epot += 4.0f * r6inv * (r6inv - 1.0f) - ECUT;
                 pres_vir += fr * rij2;
             }
         }
@@ -461,13 +461,14 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 #endif
 
     // acumular epot y pres
-    *epot += horizontal_sum(epot_v);
+    _epot += horizontal_sum(epot_v);
     pres_vir += horizontal_sum(pres_v);
 
 #endif
 
     pres_vir /= (V * 3.0f);
     *pres = *temp * rho + pres_vir;
+    *epot = _epot;
 
 }
 
