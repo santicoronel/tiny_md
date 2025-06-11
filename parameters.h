@@ -11,6 +11,7 @@
 #include <time.h> // time(NULL)
 
 #define SIMD_INTRINSICS
+//# define CUDA
 
 #ifndef M // número de particulas (debe ser un 4m^3 para el cristal inicial)
 #define M 8
