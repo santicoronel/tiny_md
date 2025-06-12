@@ -498,7 +498,6 @@ __constant__ float device_ry[N];
 __constant__ float device_rz[N];
 
 __constant__ float device_L;
-__constant__ float device_rcut2;
 
 __global__ void forces_kernel(float* fx, float* fy, float* fz,
                               float* epot, float* pres_vir)
@@ -509,43 +508,46 @@ __global__ void forces_kernel(float* fx, float* fy, float* fz,
         *epot = 0.0f;
         *pres_vir = 0.0f;
     }
+    if (gtid < N) {
 
-    for (int i = 0; i < gtid; i++) {
-
-        float xi = device_rx[i];
-        float yi = device_ry[i];
-        float zi = device_rz[i];
-
-        float xj = device_rx[gtid];
-        float yj = device_ry[gtid];
-        float zj = device_rz[gtid];
-
-        // distancia mínima entre r_i y r_j
-        float xij = xi - xj;
-        xij = minimum_image(xij, device_L);
-        float yij = yi - yj;
-        yij = minimum_image(yij, device_L);
-        float zij = zi - zj;
-        zij = minimum_image(zij, device_L);
-
-        float rij2 = xij * xij + yij * yij + zij * zij;
-
-        if (rij2 <= device_rcut2) {
-            float r2inv = 1.0f / rij2;
-            float r6inv = r2inv * r2inv * r2inv;
-
-            float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
-
-            atomicAdd(fx + i, fr * xij);
-            atomicAdd(fy + i, fr * yij);
-            atomicAdd(fz + i, fr * zij);
-
-            fx[gtid] -= fr * xij;
-            fy[gtid] -= fr * yij;
-            fz[gtid] -= fr * zij;
-
-            atomicAdd(epot, 4.0f * r6inv * (r6inv - 1.0f) - ECUT);
-            atomicAdd(pres_vir, fr * rij2);
+        float rcut2 = RCUT * RCUT;
+        for (int i = 0; i < gtid; i++) {
+    
+            float xi = device_rx[i];
+            float yi = device_ry[i];
+            float zi = device_rz[i];
+    
+            float xj = device_rx[gtid];
+            float yj = device_ry[gtid];
+            float zj = device_rz[gtid];
+    
+            // distancia mínima entre r_i y r_j
+            float xij = xi - xj;
+            xij = minimum_image(xij, device_L);
+            float yij = yi - yj;
+            yij = minimum_image(yij, device_L);
+            float zij = zi - zj;
+            zij = minimum_image(zij, device_L);
+    
+            float rij2 = xij * xij + yij * yij + zij * zij;
+    
+            if (rij2 <= rcut2) {
+                float r2inv = 1.0f / rij2;
+                float r6inv = r2inv * r2inv * r2inv;
+    
+                float fr = 24.0f * r2inv * r6inv * (2.0f * r6inv - 1.0f);
+    
+                atomicAdd(fx + i, fr * xij);
+                atomicAdd(fy + i, fr * yij);
+                atomicAdd(fz + i, fr * zij);
+    
+                atomicAdd(fx + gtid, -fr * xij);
+                atomicAdd(fy + gtid, -fr * yij);
+                atomicAdd(fz + gtid, -fr * zij);
+    
+                atomicAdd(epot, 4.0f * r6inv * (r6inv - 1.0f) - ECUT);
+                atomicAdd(pres_vir, fr * rij2);
+            }
         }
     }
 }
@@ -557,18 +559,14 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
         fxyz[i] = 0.0f;
     }
 
-    
-    float rcut2 = RCUT * RCUT;
     float _epot, pres_vir;
     
     // GPU
     
-    float *device_fxyz, *device_epot, *device_pres_vir, *device_L, *device_rcut2;
+    float *device_fxyz, *device_epot, *device_pres_vir;
     cudaMalloc((void**)&device_fxyz, 3 * N * sizeof(float));
     cudaMalloc((void**)&device_epot, sizeof(float));
     cudaMalloc((void**)&device_pres_vir, sizeof(float));
-    cudaMalloc((void**)&device_L, sizeof(float));
-    cudaMalloc((void**)&device_rcut2, sizeof(float));
     
     float *rx = rxyz, *ry = rxyz + N, *rz = rxyz + 2 * N;
     float *device_fx = device_fxyz, *device_fy = device_fxyz + N, *device_fz = device_fxyz + 2 * N;
@@ -577,7 +575,6 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     cudaMemcpyToSymbol(device_ry, ry, 3 * N * sizeof(float), 0, cudaMemcpyHostToDevice);
     cudaMemcpyToSymbol(device_rz, rz, 3 * N * sizeof(float), 0, cudaMemcpyHostToDevice);
     cudaMemcpyToSymbol(device_L, &L, sizeof(float), 0, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(device_rcut2, &rcut2, sizeof(float), 0, cudaMemcpyHostToDevice);
     cudaMemcpy(device_fxyz, fxyz, 3 * N * sizeof(float), cudaMemcpyHostToDevice);
     
     
