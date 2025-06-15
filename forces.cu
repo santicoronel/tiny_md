@@ -3,7 +3,7 @@
 #include "parameters.h"
 #include "stdio.h"
 
-#define TILE 256
+#define TILE 8
 #define FULL_MASK 0xffffffff
 
 __device__ float minimum_image(float cordi, float cell_length) {
@@ -123,6 +123,12 @@ __global__ void forces_kernel(const float* rx, const float* ry, const float* rz,
     }
 }
 
+
+static bool shouldMalloc = 1;
+static float *device_fxyz, *device_rxyz, *device_epot, *device_pres_vir;
+
+
+
 extern "C"
 void forces(float* rxyz, float* fxyz, float* epot, float* pres,
             const float* temp, const float rho, const float V, const float L)
@@ -130,12 +136,24 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
 
     float pres_vir;
     
-    float *device_fxyz, *device_rxyz, *device_epot, *device_pres_vir;
+    int mallocError = 0;
+    if (shouldMalloc) {
+        if(cudaMalloc((void**)&device_fxyz, 3 * N * sizeof(float)) != cudaSuccess)
+            mallocError = 1;
+        if(cudaMalloc((void**)&device_rxyz, 3 * N * sizeof(float)) != cudaSuccess)
+            mallocError = 1;
+        if(cudaMalloc((void**)&device_epot, sizeof(float)) != cudaSuccess)
+            mallocError = 1;
+        if(cudaMalloc((void**)&device_pres_vir, sizeof(float)) != cudaSuccess)
+            mallocError = 1;
+        if(mallocError) {
+            printf("cudaMalloc error!\n");
+            fflush(stdout);
+            abort();
+        }
 
-    cudaMalloc((void**)&device_fxyz, 3 * N * sizeof(float));
-    cudaMalloc((void**)&device_rxyz, 3 * N * sizeof(float));
-    cudaMalloc((void**)&device_epot, sizeof(float));
-    cudaMalloc((void**)&device_pres_vir, sizeof(float));
+        shouldMalloc = 0;
+    }
     
     cudaMemcpyToSymbol(device_L, &L, sizeof(float), 0, cudaMemcpyHostToDevice);
     cudaMemcpy(device_rxyz, rxyz, 3 * N * sizeof(float), cudaMemcpyHostToDevice);
@@ -144,7 +162,7 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     cudaMemset(device_pres_vir, 0, sizeof(float));
     
     
-    int nthreads = 256;
+    int nthreads = 128;
     dim3 gridDim((N + nthreads - 1) / nthreads, (N + TILE - 1) / TILE);
     dim3 blockDim(nthreads, 1);
 
