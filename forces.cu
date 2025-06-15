@@ -28,10 +28,6 @@ __global__ void forces_kernel(const float* rx, const float* ry, const float* rz,
        
     float rcut2 = RCUT * RCUT;
 
-    float xi = rx[i];
-    float yi = ry[i];
-    float zi = rz[i];
-
     float fxi = 0.0f;
     float fyi = 0.0f;
     float fzi = 0.0f;
@@ -58,6 +54,11 @@ __global__ void forces_kernel(const float* rx, const float* ry, const float* rz,
     }
 
     if (i < N && i < j_init + TILE - 1) {
+
+        float xi = rx[i];
+        float yi = ry[i];
+        float zi = rz[i];
+
         int j = j_init > i ? 0 : i + 1 - j_init;
         for (; j < TILE && j < N - j_init; j++) {
 
