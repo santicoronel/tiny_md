@@ -10,11 +10,11 @@
 
 #include <time.h> // time(NULL)
 
-#define SIMD_INTRINSICS
-//# define CUDA
+// #define SIMD_INTRINSICS
+// #define CUDA
 
 #ifndef M // número de particulas (debe ser un 4m^3 para el cristal inicial)
-#define M 8
+#define M 4
 #endif
 
 // #define TILING
@@ -44,6 +44,10 @@
 
 #ifndef RCUT // radio de corte
 #define RCUT 2.5f
+#endif
+
+#ifndef ECUT
+#define ECUT (float)(4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 #endif
 
 #ifndef DT // paso temporal ~ 1.6 fs para el Ar

@@ -2,10 +2,14 @@
 #include "core.h"
 #include "parameters.h"
 #include "wtime.h"
+#ifdef CUDA
+#include "forces.h"
+#endif
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 
 
 int main()

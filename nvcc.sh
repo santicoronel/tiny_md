@@ -1,0 +1,1 @@
+nvcc --use_fast_math -O3 -DCUDA -o tiny_md tiny_md.c core.c wtime.c forces.cu -I. -Xcompiler "-Wall -Wextra"

@@ -9,8 +9,10 @@
 #include <string.h>
 
 #include <omp.h>
-#include <cuda_runtime.h>
 
+#ifdef CUDA
+#include "forces.h"
+#endif
 
 #define ECUT (float)(4.0 * (pow(RCUT, -12) - pow(RCUT, -6)))
 
@@ -118,17 +120,6 @@ static float horizontal_sum(__m256 v) {
     return _mm256_cvtss_f32(v);
 }
 #endif
-
-#else
-__global__ float minimum_image(float cordi, const float cell_length) {
-    if (cordi <= -0.5f * cell_length) {
-        cordi += cell_length;
-    } else if (cordi > 0.5f * cell_length) {
-        cordi -= cell_length;
-    };
-    return cordi;
-}
-
 #endif
 
 
@@ -480,55 +471,6 @@ void forces(float* rxyz, float* fxyz, float* epot, float* pres,
     pres_vir += horizontal_sum(pres_v);
 
 #endif
-
-    pres_vir /= (V * 3.0f);
-    *pres = *temp * rho + pres_vir;
-    *epot = _epot;
-
-}
-
-#else
-
-__constant__ float device_rxyz[3*N];
-
-__global__ void forces_kernel(float* rx, float* ry, float *rz,
-                              float* fx, float* fy, float* fz)
-{
-    
-}
-
-void forces(float* rxyz, float* fxyz, float* epot, float* pres,
-            const float* temp, const float rho, const float V, const float L)
-{
-    for (int i = 0; i < 3 * N; i++) {
-        fxyz[i] = 0.0f;
-    }
-
-    
-    float rcut2 = RCUT * RCUT;
-    float _epot, pres_vir;
-    
-    // GPU
-    
-    float *device_fxyz, *device_epot, *device_pres_vir;
-    cudaMalloc((void**)&device_fxyz, 3 * N * sizeof(float));
-    cudaMalloc((void**)&device_epot, sizeof(float));
-    cudaMalloc((void**)&device_pres_vir, sizeof(float));
-    
-    cudaMemcpyToSymbol(device_rxyz, rxyz, 3 * N * sizeof(float), 0, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_fxyz, fxyz, 3 * N * sizeof(float), cudaMemcpyHostToDevice);
-    
-    float *device_rx = device_rxyz, *device_ry = device_rxyz + N, *device_rz = device_rxyz + 2 * N;
-    float *device_fx = device_fxyz, *device_fy = device_fxyz + N, *device_fz = device_fxyz + 2 * N;
-
-    forces_kernel<<<(N + 255) / 256, 256>>>(device_rx, device_ry, device_rz,
-                                                device_fx, device_fy, device_fz);
-    
-    
-    cudaDeviceSynchronize();
-    cudaMemcpy(fxyz, device_fxyz, 3 * N * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&_epot, device_epot, sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&pres_vir, device_pres_vir, sizeof(float), cudaMemcpyDeviceToHost);
 
     pres_vir /= (V * 3.0f);
     *pres = *temp * rho + pres_vir;
